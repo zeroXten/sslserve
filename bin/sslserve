@@ -1,0 +1,77 @@
+#!/usr/bin/env ruby
+
+require 'webrick'
+require 'webrick/https'
+require 'openssl'
+require 'optparse'
+
+version = "0.0.1"
+options = {
+  :dir => Dir.pwd,
+  :host => '127.0.0.1',
+  :port => '3443',
+  :name => "localhost",
+  :expire => 1
+}
+
+OptionParser.new do |opts|
+  opts.banner = "Usage sslserve [options]"
+
+  opts.on("-d", "--dir DIR", "Directory to serve files from. Defaults to pwd") do |d|
+    options[:dir] = d
+  end
+
+  opts.on("-l", "--listen IP", "IP address bind to. Defaults to #{options[:host]}") do |l|
+    options[:host] = l
+  end
+
+  opts.on("-p", "--port PORT", "PORT to listen on. Defaults to #{options[:port]}") do |p|
+    options[:port] = p
+  end
+
+  opts.on("-n", "--name NAME", "NAME for SSL certificate. Defaults to #{options[:name]}") do |n|
+    options[:name] = n
+  end
+
+  opts.on("-e", "--expires HOURS", "Certificate expires in HOURS hours. Defaults to #{options[:expires]}") do |e|
+    options[:expire] = e
+  end
+
+  opts.on("-h", "--help", "Show this message") do
+    puts opts
+    exit
+  end
+
+  opts.on("-v", "--version", "Show version") do
+    puts "Version #{version}"
+    exit
+  end
+
+end.parse!
+
+key = OpenSSL::PKey::RSA.new 2048
+
+name = OpenSSL::X509::Name.parse "CN=#{options[:name]}"
+
+cert = OpenSSL::X509::Certificate.new
+cert.version = 3
+cert.serial = 0
+cert.not_before = Time.now
+cert.not_after = Time.now + (options[:expire] * 3600)
+cert.public_key = key.public_key
+cert.subject = name
+cert.issuer = name
+cert.sign key, OpenSSL::Digest::SHA1.new
+
+server = WEBrick::HTTPServer.new(
+  :BindAddress => options[:host],
+  :Port => options[:port], 
+  :DocumentRoot => options[:dir],
+  :SSLEnable => true,
+  :SSLVerifyClient => OpenSSL::SSL::VERIFY_NONE,
+  :SSLPrivateKey => key,
+  :SSLCertificate => cert,
+  :SSLCertName => [[options[:name], WEBrick::Utils::getservername]],
+)
+Signal.trap('INT') { server.shutdown }
+server.start
