@@ -5,7 +5,7 @@ require 'webrick/https'
 require 'openssl'
 require 'optparse'
 
-version = "0.0.1"
+version = "0.0.2"
 options = {
   :dir => Dir.pwd,
   :host => '127.0.0.1',
@@ -33,7 +33,7 @@ OptionParser.new do |opts|
     options[:name] = n
   end
 
-  opts.on("-e", "--expires HOURS", "Certificate expires in HOURS hours. Defaults to #{options[:expires]}") do |e|
+  opts.on("-e", "--expires HOURS", "Certificate expires in HOURS hours. Defaults to #{options[:expire]}") do |e|
     options[:expire] = e
   end
 
