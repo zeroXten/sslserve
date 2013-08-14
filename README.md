@@ -19,6 +19,6 @@ Usage
         -l, --listen IP                  IP address bind to. Defaults to 127.0.0.1
         -p, --port PORT                  PORT to listen on. Defaults to 3443
         -n, --name NAME                  NAME for SSL certificate. Defaults to localhost
-        -e, --expires HOURS              Certificate expires in HOURS hours. Defaults to
+        -e, --expires HOURS              Certificate expires in HOURS hours. Defaults to 1
         -h, --help                       Show this message
         -v, --version                    Show version
