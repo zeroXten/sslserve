@@ -20,7 +20,7 @@ Usage
         -p, --port PORT                  PORT to listen on. Defaults to 3443
         -n, --name NAME                  NAME for SSL certificate. Defaults to localhost
         -e, --expires HOURS              Certificate expires in HOURS hours. Defaults to 1
-        -a, --auth PASSWORD              PASSWORD for HTTP Basic Auth. Defaults to disabled. Username is the SHA1 certificate fingerprint
+        -a, --auth PASSWORD              PASSWORD for HTTP Basic Auth. Defaults to disabled. Username is the MD5 certificate fingerprint
         -r, --realm REALM                HTTP Basic Auth REALM. Defaults to sslserve realm
         -h, --help                       Show this message
         -v, --version                    Show version
