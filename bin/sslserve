@@ -6,7 +6,7 @@ require 'openssl'
 require 'base64'
 require 'optparse'
 
-version = "0.1.0"
+version = "0.1.1"
 options = {
   :dir => Dir.pwd,
   :host => '127.0.0.1',
@@ -40,7 +40,7 @@ OptionParser.new do |opts|
     options[:expire] = e
   end
 
-  opts.on("-a", "--auth PASSWORD", "PASSWORD for HTTP Basic Auth. Defaults to disabled. Username is the SHA1 certificate fingerprint") do |p|
+  opts.on("-a", "--auth PASSWORD", "PASSWORD for HTTP Basic Auth. Defaults to disabled. Username is the MD5 certificate fingerprint") do |p|
     options[:pass] = p
   end
 
