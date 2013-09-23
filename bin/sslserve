@@ -3,21 +3,24 @@
 require 'webrick'
 require 'webrick/https'
 require 'openssl'
+require 'base64'
 require 'optparse'
 
-version = "0.0.2"
+version = "0.1.0"
 options = {
   :dir => Dir.pwd,
   :host => '127.0.0.1',
   :port => '3443',
   :name => "localhost",
-  :expire => 1
+  :expire => 1,
+  :pass => nil,
+  :realm => "sslserve realm"
 }
 
 OptionParser.new do |opts|
   opts.banner = "Usage sslserve [options]"
 
-  opts.on("-d", "--dir DIR", "Directory to serve files from. Defaults to pwd") do |d|
+  opts.on("-d", "--dir DIR", "Directory to serve files from. Defaults to cwd") do |d|
     options[:dir] = d
   end
 
@@ -37,6 +40,14 @@ OptionParser.new do |opts|
     options[:expire] = e
   end
 
+  opts.on("-a", "--auth PASSWORD", "PASSWORD for HTTP Basic Auth. Defaults to disabled. Username is the SHA1 certificate fingerprint") do |p|
+    options[:pass] = p
+  end
+
+  opts.on("-r", "--realm REALM", "HTTP Basic Auth REALM. Defaults to #{options[:realm]}") do |r|
+    options[:realm] = r
+  end
+
   opts.on("-h", "--help", "Show this message") do
     puts opts
     exit
@@ -53,15 +64,31 @@ key = OpenSSL::PKey::RSA.new 2048
 
 name = OpenSSL::X509::Name.parse "CN=#{options[:name]}"
 
+expires = Time.now + (options[:expire] * 3600)
+
 cert = OpenSSL::X509::Certificate.new
 cert.version = 3
 cert.serial = 0
 cert.not_before = Time.now
-cert.not_after = Time.now + (options[:expire] * 3600)
+cert.not_after = expires
 cert.public_key = key.public_key
 cert.subject = name
 cert.issuer = name
 cert.sign key, OpenSSL::Digest::SHA1.new
+
+pem = Base64.decode64(cert.to_pem.split("\n")[1..-1].join(""))
+sha1_fingerprint = OpenSSL::Digest::SHA1.digest(pem).unpack("H*").first.scan(/../).join(":").upcase
+md5_fingerprint = OpenSSL::Digest::MD5.digest(pem).unpack("H*").first.scan(/../).join(":").upcase
+
+if options[:pass]
+  authenticate = Proc.new do |req, res|
+    WEBrick::HTTPAuth.basic_auth(req, res, '') do |user, pass|
+      user and user.upcase.gsub(/[^0-9A-F]/,'') == md5_fingerprint.upcase.gsub(/[^0-9A-F]/,'') && pass == options[:pass]
+    end
+  end
+else
+  authenticate = nil
+end
 
 server = WEBrick::HTTPServer.new(
   :BindAddress => options[:host],
@@ -73,5 +100,27 @@ server = WEBrick::HTTPServer.new(
   :SSLCertificate => cert,
   :SSLCertName => [[options[:name], WEBrick::Utils::getservername]],
 )
+
+fh_options = {
+  :FancyIndexing => true,
+}
+fh_options[:HandlerCallback] = authenticate if authenticate
+
+server.mount('/', WEBrick::HTTPServlet::FileHandler, options[:dir], fh_options)
 Signal.trap('INT') { server.shutdown }
+
+puts "=============================================================================="
+puts " SHA-1 Certificate fingerprint:"
+puts " #{sha1_fingerprint}"
+puts " MD5 Certificate fingerprint:"
+puts " #{md5_fingerprint}"
+puts "\n Certificate expires at #{expires}"
+if authenticate
+  puts "\n Basic auth realm: '#{options[:realm]}'"
+  puts " Basic auth user:  #{md5_fingerprint.upcase.gsub(/[^0-9A-F]/,'')}"
+  puts " Basic auth pass:  '#{options[:pass]}'"
+end
+puts "\n Further information: https://github.com/zeroXten/sslserve"
+puts "=============================================================================="
+
 server.start
