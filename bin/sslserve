@@ -6,13 +6,14 @@ require 'openssl'
 require 'base64'
 require 'optparse'
 
-version = "0.1.1"
+version = "0.1.2"
 options = {
   :dir => Dir.pwd,
   :host => '127.0.0.1',
   :port => '3443',
   :name => "localhost",
   :expire => 1,
+  :user => nil,
   :pass => nil,
   :realm => "sslserve realm"
 }
@@ -40,7 +41,11 @@ OptionParser.new do |opts|
     options[:expire] = e
   end
 
-  opts.on("-a", "--auth PASSWORD", "PASSWORD for HTTP Basic Auth. Defaults to disabled. Username is the MD5 certificate fingerprint") do |p|
+  opts.on("-U", "--auth PASSWORD", "USERNAME for HTTP Basic Auth. Defaults to disabled") do |u|
+    options[:user] = u
+  end
+
+  opts.on("-P", "--pass PASSWORD", "PASSWORD for HTTP Basic Auth. Defaults to disabled") do |p|
     options[:pass] = p
   end
 
@@ -80,10 +85,10 @@ pem = Base64.decode64(cert.to_pem.split("\n")[1..-1].join(""))
 sha1_fingerprint = OpenSSL::Digest::SHA1.digest(pem).unpack("H*").first.scan(/../).join(":").upcase
 md5_fingerprint = OpenSSL::Digest::MD5.digest(pem).unpack("H*").first.scan(/../).join(":").upcase
 
-if options[:pass]
+if options[:user] and options[:pass]
   authenticate = Proc.new do |req, res|
     WEBrick::HTTPAuth.basic_auth(req, res, '') do |user, pass|
-      user and user.upcase.gsub(/[^0-9A-F]/,'') == md5_fingerprint.upcase.gsub(/[^0-9A-F]/,'') && pass == options[:pass]
+      user == options[:user] and pass == options[:pass]
     end
   end
 else
@@ -116,9 +121,9 @@ puts " MD5 Certificate fingerprint:"
 puts " #{md5_fingerprint}"
 puts "\n Certificate expires at #{expires}"
 if authenticate
-  puts "\n Basic auth realm: '#{options[:realm]}'"
-  puts " Basic auth user:  #{md5_fingerprint.upcase.gsub(/[^0-9A-F]/,'')}"
-  puts " Basic auth pass:  '#{options[:pass]}'"
+  puts "\n Basic auth realm: #{options[:realm]}"
+  puts " Basic auth user:  #{options[:user]}"
+  puts " Basic auth pass:  #{options[:pass]}"
 end
 puts "\n Further information: https://github.com/zeroXten/sslserve"
 puts "=============================================================================="
