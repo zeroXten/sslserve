@@ -33,7 +33,7 @@ You can turn on HTTP basic authentication using the --auth (-a) option.
 
 The password is supplied to the --auth option.
 
-The username is case-insensitive MD5 certificate fingerprint with spaces and/or colons removed automatically. For example, the following four are all the same, valid usernames:
+The username is the case-insensitive certificate MD5 fingerprint with all characters except 0-9 A-F removed automatically. For example, the following four are all the same, valid usernames:
 
 * 36:40:1E:14:FC:86:7E:D6:0C:40:E3:D8:8D:75:8B:C2
 * 36 40 1E 14 FC 86 7E D6 0C 40 E3 D8 8D 75 8B C2
