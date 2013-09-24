@@ -67,7 +67,7 @@ Hopefully you've spotted the flaw. I was trying to verify the connection, using 
 
 From a security engineering and psychological perspective, this is in my opinion a nice little example of why security is "hard". Focus shifted to making fingerprint verification easy, so it would actually be used. But that was at the cost of the actual security it was trying to implement. Obviously it didn't take me too long to suddenly realise how dumb the approach was and I fixed it immediately. I think the same sort of thing happens at much larger scales, in major software and platforms and at a slower speed. 
 
-The lesson learnt is to think slowly, carefully and critically about the implementation of all new features, and not to be blinded by the feature's shininess.
+The lesson learnt is to think slowly, carefully and critically about the security implication of all new features, and not to be blinded by the feature's shininess.
 
 See also
 ========
